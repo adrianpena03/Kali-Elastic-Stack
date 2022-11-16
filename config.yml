@@ -1,0 +1,124 @@
+sudo su
+apt-get update
+
+## Elasticsearch installation begins
+
+// Download and install public signing key
+
+wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+
+// Install apt-transport-https package
+apt-get install apt-transport-https -y
+
+// Save directory definitions
+echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-7.x.list
+
+// Update and Install Elasticsearch
+ apt-get update 
+ apt-get install elasticsearch && sudo apt-get install logstash && sudo apt-get install kibana
+
+
+//  Start elasticsearch
+systemctl start elasticsearch
+
+
+// configure Elastic Search
+  vi /etc/elasticsearch/elasticsearch.yml
+
+  // change cluster name, uncomment by removing hashtag in beginning of line
+    cluster.name: elk-elastic
+
+  // give cluster a name and uncomment
+    node.name: elk-1
+  
+  // change network binding and uncomment
+    network.host: 0.0.0.0
+  
+  // uncomment http port
+    http.port 9200
+  
+  // (import command anywhere in discovery section), configure cluster as a single-node cluster
+    discovery.type: single-node
+    
+  // Save and Quit
+  
+
+## Configure Kibana
+vi /etc/kibana/kibana.yml
+
+// Uncomment server.port, but leave value as default (5601)
+
+// Uncomment server.host, replace 'localhost' with '0.0.0.0' to allow all incoming connections
+
+// Uncomment server.name, replace 'your-hostname' with 'elk-kibana'
+
+// Uncomment elasticsearch.hosts
+
+// Save and Quit
+
+// Start kibana
+systemctl start kibana
+
+## Configure Logstash
+
+  vi /etc/systemd/system/logstash.service
+
+  // Go to end of ExecStart line and type
+
+  -----------------------------------
+
+  --path.config /etc/logstash/logstash.conf
+
+  -----------------------------------
+  
+  // Save and Quit
+
+
+  vi /etc/logstash/logstash.conf
+
+  // Paste 
+-----------------------------------
+input {
+  beats {
+    host => "127.0.0.1"
+    port => 5044
+  }
+}
+
+output {
+  elasticsearch {
+    hosts => ["http://localhost:9200"]
+    index => "%{[@metadata][beat]}-%{[@metadata][version]}" 
+  }
+}
+-----------------------------------
+
+// Save and Quit
+
+// Set settings for logstash.yml
+
+  vi /etc/logstash/logstash.yml
+  // Delete All Text
+  Paste in:
+  -----------------------------------
+  pipeline:
+  batch:
+    size: 125
+    delay: 50
+node:
+  name: "Elk-Log"
+path:
+   queue: "/etc/logstash/conf.d"
+-----------------------------------
+
+// Save and Quit
+
+
+// Run this to start logstash service
+
+-----------------------------------
+
+systemctl start logstash
+
+/usr/share/logstash/bin/logstash "--path.settings" "/etc/logstash" --path.config /etc/logstash/logstash.conf
+-----------------------------------
