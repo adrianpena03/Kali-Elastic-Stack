@@ -1,2 +1,2 @@
 # KaliLinux-Elastic-Stack
-Contains the download instructions for an ELK stack on Kali Linux
+Contains configuration and download instructions for an ELK stack on Kali Linux
